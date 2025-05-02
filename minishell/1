@@ -242,65 +242,7 @@ int grammer(t_token *tokens, int tokens_index)
 	return 1;
 }
 
-t_command *create_command() {
-    t_command *cmd = malloc(sizeof(t_command));
-    cmd->args = malloc(sizeof(char *) * 100);
-    cmd->infile = NULL;
-    cmd->outfile = NULL;
-    cmd->next = NULL;
-    return cmd;
-}
-
-t_command *parser(t_token *tokens, int tokens_index)
-{
-	t_command *head =  create_command();
-	t_command *current = head;
-	int args_index = 0;
-	int i;
-	i = 0;
-
-	printf("%d ->>\n", tokens_index);
-	while (i < tokens_index)
-	{
-		if (tokens[i].type == TOKEN_PIPE)
-		{
-			current->args[args_index] = NULL;
-			current->next = create_command();
-			current = current->next;
-			args_index = 0;
-		}
-		else if (tokens[i].type == TOKEN_REDIR_OUT) 
-		{
-			current->outfile = tokens[++i].data; 
-		}
-		else if (tokens[i].type == TOKEN_REDIR_IN) 
-		{
-			current->infile = tokens[++i].data; 
-		}
-		else {
-			current->args[args_index++] = tokens[i].data;
-			printf("%s ->>\n", tokens[i].data);
-		}
-		i++;
-	}
-	current->args[args_index] = NULL;
-	return head;
-}
-
-void print_commands(t_command *cmd) {
-    int i = 1;
-    while (cmd) {
-        printf("Command %d:\n", i++);
-        for (int j = 0; cmd->args[j]; j++) {
-            printf("  Arg: %s\n", cmd->args[j]);
-        }
-        if (cmd->infile)
-            printf("  Infile: %s\n", cmd->infile);
-        if (cmd->outfile)
-            printf("  Outfile: %s\n", cmd->outfile);
-        cmd = cmd->next;
-    }
-}
+t_command parser(t_token *tokens)
 
 void tockenizer(char *cmds)
 {
@@ -312,8 +254,7 @@ void tockenizer(char *cmds)
 		printf("token --> number %d %s type ==> %d \n", i, tokens[i].data, tokens[i].type);
 	if (!grammer(tokens, i))
 		printf("error\n");
-	t_command *parsed = parser(tokens, i);
-	print_commands(parsed);
+	parser(tokens);
 }
 
 int	count_args_len(char **args, int ac)
