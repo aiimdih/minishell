@@ -58,6 +58,18 @@ typedef struct {
     int capacity;
 } StringArray;
 
+typedef struct s_env {
+    char **env_list;
+    int env_index;
+    int size;
+} t_env;
+
+typedef struct node_en 
+{
+	char *data;
+	struct node_en* next;
+} node_env;
+
 // Initialize the dynamic string array with a given capacity
 void initStringArray(StringArray *arr, int capacity) {
     arr->data = (char **)malloc(capacity * sizeof(char *));
@@ -130,6 +142,7 @@ char	*push_str(char *str, char c)
 int lexer(char *cmds, t_token *tokens, int tokens_index)
 {
 	int i;
+	/*int end;*/
 	int start;
 	i = 0;
 
@@ -179,6 +192,20 @@ int lexer(char *cmds, t_token *tokens, int tokens_index)
 			tokens_index++;
 			i++;
 		}
+		/*else if (cmds[i] == '=')*/
+		/*{*/
+		/*	start = i;*/
+		/*	if (i <= 0)*/
+		/*		exit(EXIT_FAILURE);*/
+		/*	while (ft_strchr("><| ", cmds[start]) == 0)*/
+		/*		start--;*/
+		/*	end = start;*/
+		/*	while (cmds[end] && ft_strchr("><| ", cmds[end]) == 0)*/
+		/*		end++;*/
+		/*	env_lis	= ft_realloc(env_list, (size - 1) * sizeof(char *), */
+		/*			size * sizeof(char *));*/
+		/*	env_list[env_index] = ft_substr(cmds, start, end - start);*/
+		/*}*/
 		else 
 		{
 			tokens[tokens_index].type = TOKEN_WORD; 
@@ -242,7 +269,8 @@ int grammer(t_token *tokens, int tokens_index)
 	return 1;
 }
 
-t_command *create_command() {
+t_command *create_command() 
+{
     t_command *cmd = malloc(sizeof(t_command));
     cmd->args = malloc(sizeof(char *) * 100);
     cmd->infile = NULL;
@@ -251,17 +279,22 @@ t_command *create_command() {
     return cmd;
 }
 
-t_command *parser(t_token *tokens, int tokens_index)
+t_command *parser(t_token *tokens, int tokens_index, t_env *env_)
 {
 	t_command *head =  create_command();
 	t_command *current = head;
+	(void)env_;
+	/*int start;*/
+	/*int end;*/
 	int args_index = 0;
 	int i;
 	i = 0;
 
-	printf("%d ->>\n", tokens_index);
+	/*printf("%d ->>\n", tokens_index);*/
 	while (i < tokens_index)
 	{
+		
+
 		if (tokens[i].type == TOKEN_PIPE)
 		{
 			current->args[args_index] = NULL;
@@ -278,8 +311,23 @@ t_command *parser(t_token *tokens, int tokens_index)
 			current->infile = tokens[++i].data; 
 		}
 		else {
-			current->args[args_index++] = tokens[i].data;
-			printf("%s ->>\n", tokens[i].data);
+			if (ft_strcmp(tokens[i].data, "export") == 0)
+			{
+				if (i < tokens_index - 1  && ft_strchr(tokens[i + 1].data, '='))
+				{
+					env_->env_list	= ft_realloc(env_->env_list, (env_->size - 1) * sizeof(char *), 
+								env_->size * sizeof(char *));
+					env_->size ++;
+					env_->env_list[env_->env_index++] = strdup(tokens[i + 1].data);
+					for (i = 0; env_->env_list[i]; i++)
+						printf("%s---\n", env_->env_list[i]);
+					i++;
+				}
+			}
+			else 
+				current->args[args_index++] = tokens[i].data;
+			/*}*/
+			/*printf("%s ->>\n", tokens[i].data);*/
 		}
 		i++;
 	}
@@ -302,7 +350,7 @@ void print_commands(t_command *cmd) {
     }
 }
 
-void tockenizer(char *cmds)
+void tockenizer(char *cmds, t_env *env_)
 {
 	int tokens_index = 0;
 	t_token tokens[MAX_TOKENS];
@@ -312,7 +360,7 @@ void tockenizer(char *cmds)
 		printf("token --> number %d %s type ==> %d \n", i, tokens[i].data, tokens[i].type);
 	if (!grammer(tokens, i))
 		printf("error\n");
-	t_command *parsed = parser(tokens, i);
+	t_command *parsed = parser(tokens, i,  env_);
 	print_commands(parsed);
 }
 
@@ -348,17 +396,66 @@ char	*merge_args(char **args, int ac)
 	return (merged_args);
 }
 
-int main() 
+node_env *create_node(const char *env_str)
+{
+	node_env *new_node = malloc (sizeof(node_env));
+	new_node->data = strdup(env_str);
+	new_node->next = NULL;
+	return new_node;
+}
+
+void appendNode(node_env** head_ref, const char *env_str) 
+{
+	node_env* new_node = create_node(env_str);
+	node_env* temp;
+    if (*head_ref == NULL) {
+        *head_ref = new_node;
+        return;
+    }
+    temp = *head_ref;
+    while (temp->next != NULL)
+        temp = temp->next;
+    temp->next = new_node;
+	printf("k\n");
+}
+
+void printList(node_env* node) {
+    while (node != NULL) {
+        printf("%s -> ", node->data);
+        node = node->next;
+    }
+    printf("NULL\n");
+}
+
+int main(int ac, char **av, char *env[]) 
 {
 	char *cmds;
-
+	(void)ac;
+	(void)av;
+	t_env *env_ = malloc(sizeof(t_env));
+	int i;
+	env_->size = 2;
+	env_->env_index = 0;
+	
+	i = 0;
+	env_->env_list = malloc(sizeof(char *) * env_->size);
 	/*cmds = merge_args(av, ac);*/
+	while (env[env_->env_index])
+	{
+		env_->env_list[env_->env_index] = strdup(env[env_->env_index]);
+		env_->size++;
+		env_->env_list	= ft_realloc(env_->env_list, (env_->size - 1) * sizeof(char *), 
+					env_->size * sizeof(char *));
+		env_->env_index++;
+	}
+	for (i = 0; env_->env_list[i]; i++)
+		printf("%s---\n", env_->env_list[i]);
 	while (1)
 	{
 		cmds = readline("minishell> ");
 		if (!cmds)
 			break;
-		tockenizer(cmds);
+		tockenizer(cmds, env_);
 	}
     /*StringArray arr;*/
     /*initStringArray(&arr, 2);*/
