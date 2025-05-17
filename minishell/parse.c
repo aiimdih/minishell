@@ -5,25 +5,6 @@
 #include <readline/history.h>
 #include <stdio.h>
 #include <string.h>
-
-/**/
-/*typedef struct {*/
-/*    char **data;*/
-/*    int size;*/
-/*    int capacity;*/
-/*} t_push_back;*/
-/**/
-/*void push_back(t_push_back *arr)*/
-/*{*/
-/**/
-/*}*/
-/**/
-/*int main() */
-/*{*/
-/*    StringArray arr;*/
-/*	push_back(arr, "hello");*/
-/*    return 0;*/
-/*}*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,18 +32,6 @@ typedef struct s_token {
     char *data;
 } t_token;
 
-// Define the struct for the dynamic string array
-typedef struct {
-    char **data;
-    int size;
-    int capacity;
-} StringArray;
-
-typedef struct s_env {
-    char **env_list;
-    int env_index;
-    int size;
-} t_env;
 
 typedef struct node_en 
 {
@@ -70,74 +39,6 @@ typedef struct node_en
 	struct node_en* next;
 } node_env;
 
-// Initialize the dynamic string array with a given capacity
-void initStringArray(StringArray *arr, int capacity) {
-    arr->data = (char **)malloc(capacity * sizeof(char *));
-    if (arr->data == NULL) {
-        fprintf(stderr, "Memory allocation failed!\n");
-        exit(EXIT_FAILURE);
-    }
-    arr->size = 0;
-    arr->capacity = capacity;
-}
-
-// Add a string to the dynamic array (make a copy of the string)
-void addString(StringArray *arr, const char *str) {
-    // Resize if necessary
-    if (arr->size == arr->capacity) {
-        arr->capacity *= 2;
-        char **temp = (char **)realloc(arr->data, arr->capacity * sizeof(char *));
-        if (temp == NULL) {
-            fprintf(stderr, "Memory reallocation failed!\n");
-            exit(EXIT_FAILURE);
-        }
-        arr->data = temp;
-    }
-    arr->data[arr->size] = strdup(str);
-    if (arr->data[arr->size] == NULL) {
-        fprintf(stderr, "String duplication failed!\n");
-        exit(EXIT_FAILURE);
-    }
-    arr->size++;
-}
-
-// Get a string from the array at the given index
-char *getString(StringArray *arr, int index) {
-    if (index < 0 || index >= arr->size) {
-        fprintf(stderr, "Index out of bounds!\n");
-        return NULL;
-    }
-    return arr->data[index];
-}
-
-// Free all allocated memory associated with the string array
-void freeStringArray(StringArray *arr) {
-    for (int i = 0; i < arr->size; i++) {
-        free(arr->data[i]);  // Free each string
-    }
-    free(arr->data);  // Free the array of pointers
-    arr->data = NULL;
-    arr->size = 0;
-    arr->capacity = 0;
-}
-
-char	*push_str(char *str, char c)
-{
-	int i;
-	int len;
-	char *new_ptr;
-
-	if (c == '\0')
-		return (str);
-	i = 0;
-	len = 0;
-	if (str)
-		len = ft_strlen(str);
-	new_ptr = ft_realloc(str, len, len + 2);
-	new_ptr[len] = c;
-	new_ptr[len + 1] = '\0';
-	return new_ptr; 
-}
 
 int lexer(char *cmds, t_token *tokens, int tokens_index)
 {
@@ -279,7 +180,7 @@ t_command *create_command()
     return cmd;
 }
 
-t_command *parser(t_token *tokens, int tokens_index, t_env *env_)
+t_command *parser(t_token *tokens, int tokens_index, StringArray *env_)
 {
 	t_command *head =  create_command();
 	t_command *current = head;
@@ -293,8 +194,6 @@ t_command *parser(t_token *tokens, int tokens_index, t_env *env_)
 	/*printf("%d ->>\n", tokens_index);*/
 	while (i < tokens_index)
 	{
-		
-
 		if (tokens[i].type == TOKEN_PIPE)
 		{
 			current->args[args_index] = NULL;
@@ -310,22 +209,29 @@ t_command *parser(t_token *tokens, int tokens_index, t_env *env_)
 		{
 			current->infile = tokens[++i].data; 
 		}
-		else {
-			if (ft_strcmp(tokens[i].data, "export") == 0)
-			{
-				if (i < tokens_index - 1  && ft_strchr(tokens[i + 1].data, '='))
-				{
-					env_->env_list	= ft_realloc(env_->env_list, (env_->size - 1) * sizeof(char *), 
-								env_->size * sizeof(char *));
-					env_->size ++;
-					env_->env_list[env_->env_index++] = strdup(tokens[i + 1].data);
-					for (i = 0; env_->env_list[i]; i++)
-						printf("%s---\n", env_->env_list[i]);
-					i++;
-				}
-			}
-			else 
-				current->args[args_index++] = tokens[i].data;
+		else 
+		{
+			/*if (ft_strcmp(tokens[i].data, "export") == 0)*/
+			/*{*/
+			/*	if (i < tokens_index - 1  && ft_strchr(tokens[i + 1].data, '='))*/
+			/*	{*/
+			/*		strarr_push(env_, tokens[i + 1].data);*/
+			/*		for (i = 0; env_->data[i]; i++)*/
+			/*			printf("%s---\n", env_->data[i]);*/
+			/*		i++;*/
+			/*	}*/
+			/*	else {*/
+			/*		current->args[args_index++] = tokens[i].data;*/
+			/*	}*/
+			/*}*/
+			/*else {*/
+			/*	if (ft_strchr(tokens[i].data, '$') && (ft_strlen(tokens[i].data) > 1))*/
+			/*	{*/
+			/*		char *tmp = grep */
+			/*	}*/
+			/*}*/
+			/*else */
+			current->args[args_index++] = tokens[i].data;
 			/*}*/
 			/*printf("%s ->>\n", tokens[i].data);*/
 		}
@@ -350,7 +256,80 @@ void print_commands(t_command *cmd) {
     }
 }
 
-void tockenizer(char *cmds, t_env *env_)
+int get_equal(char *str)
+{
+	int i;
+
+	i = 0;
+	while (str[i] && str[i] != '=')
+		i++;
+	if (str[i] == '\0')
+		return 0;
+	return i;
+}
+
+char *get_env(StringArray *env_, char *target)
+{
+	size_t end;
+	int i;
+	char *result;
+
+	i = 0;
+	while (env_->data[i])
+	{
+		printf("is this the line of env --> %s\n", env_->data[i]);
+		end = get_equal(env_->data[i]);
+		if (ft_strncmp((env_->data[i]), target, end) == 0 &&
+			ft_strlen(target) == end)
+		{
+			result = ft_strdup(env_->data[i] + (end + 1));
+			return result;
+		}
+		i++;
+	}
+	return NULL;
+}
+
+void expansion(t_command *cmds, StringArray *env_)
+{
+	t_command *current = cmds;
+	char *tmp;
+	int i ;
+	while (current)
+	{
+		i = 0;
+		while (current->args[i])
+		{
+			if ((ft_strcmp(current->args[i], "export") == 0) && current->args[i + 1] !=
+				NULL && (ft_strchr(current->args[i + 1], '=') != 0))
+			{
+				printf("ll-----------------------------------------\n");
+				i++;
+				while (current->args[i] && strchr(current->args[i], '='))
+				{
+					strarr_push(env_, current->args[i]);
+					i++;
+				}
+				for (int j = 0; env_->data[j]; j++)
+					printf("%s---\n", env_->data[j]);
+			}
+			else if (ft_strchr(current->args[i], '$') && 
+				(ft_strlen(current->args[i]) > 1))
+			{
+				tmp = get_env(env_, (current->args[i] + 1));
+				if (tmp)
+				{
+					current->args[i]
+					printf("%s\n", tmp);
+				}
+			}
+			i++;
+		}
+		current = current->next;
+	}
+}
+
+void tockenizer(char *cmds, StringArray *env_)
 {
 	int tokens_index = 0;
 	t_token tokens[MAX_TOKENS];
@@ -361,6 +340,7 @@ void tockenizer(char *cmds, t_env *env_)
 	if (!grammer(tokens, i))
 		printf("error\n");
 	t_command *parsed = parser(tokens, i,  env_);
+	expansion(parsed, env_);
 	print_commands(parsed);
 }
 
@@ -430,32 +410,29 @@ void printList(node_env* node) {
 int main(int ac, char **av, char *env[]) 
 {
 	char *cmds;
+	StringArray tokens;
+	StringArray env_;
 	(void)ac;
 	(void)av;
-	t_env *env_ = malloc(sizeof(t_env));
 	int i;
-	env_->size = 2;
-	env_->env_index = 0;
 	
+	strarr_init(&tokens, 0);
+	strarr_init(&env_, 0);
 	i = 0;
-	env_->env_list = malloc(sizeof(char *) * env_->size);
 	/*cmds = merge_args(av, ac);*/
-	while (env[env_->env_index])
+	while (env[env_.size])
 	{
-		env_->env_list[env_->env_index] = strdup(env[env_->env_index]);
-		env_->size++;
-		env_->env_list	= ft_realloc(env_->env_list, (env_->size - 1) * sizeof(char *), 
-					env_->size * sizeof(char *));
-		env_->env_index++;
+		printf("env --> %zu\n", env_.size);
+		strarr_push(&env_, env[env_.size]);
 	}
-	for (i = 0; env_->env_list[i]; i++)
-		printf("%s---\n", env_->env_list[i]);
+	for (i = 0; env_.data[i]; i++)
+		printf("%s---\n", env_.data[i]);
 	while (1)
 	{
 		cmds = readline("minishell> ");
 		if (!cmds)
 			break;
-		tockenizer(cmds, env_);
+		tockenizer(cmds, &env_);
 	}
     /*StringArray arr;*/
     /*initStringArray(&arr, 2);*/

@@ -14,11 +14,20 @@
 # define MINISHELL_H
 
 typedef struct s_dynstr {
-    char *data;      // dynamically allocated buffer
-    size_t len;      // length of string (excluding null terminator)
-    size_t capacity; // allocated size
+    char *data;      
+    size_t len;      
+    size_t capacity; 
 } t_dynstr;
 
+typedef struct {
+    char **data;    
+    size_t size;    
+    size_t capacity; 
+} StringArray;
+
+void strarr_init(StringArray *arr, size_t init_capacity);
+void strarr_push(StringArray *arr, const char *str);
+void strarr_free(StringArray *arr);
 t_dynstr *dynstr_new(void);
 int dynstr_push_str(t_dynstr *str, const char *s);
 void dynstr_free(t_dynstr *str);
