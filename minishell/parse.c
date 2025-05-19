@@ -256,12 +256,12 @@ void print_commands(t_command *cmd) {
     }
 }
 
-int get_equal(char *str)
+int get_char(char *str, char target)
 {
 	int i;
 
 	i = 0;
-	while (str[i] && str[i] != '=')
+	while (str[i] && str[i] != target)
 		i++;
 	if (str[i] == '\0')
 		return 0;
@@ -272,16 +272,27 @@ char *get_env(StringArray *env_, char *target)
 {
 	size_t end;
 	int i;
+	char *tmp;
 	char *result;
 
 	i = 0;
-	while (env_->data[i])
+	printf("itarget is -> %s\n", target);
+	while (target[i] && (target[i] == '_' || (ft_isdigit(target[i]) && 0 < i) 
+		|| ft_isalpha(target[i])))
 	{
-		printf("is this the line of env --> %s\n", env_->data[i]);
-		end = get_equal(env_->data[i]);
-		if (ft_strncmp((env_->data[i]), target, end) == 0 &&
-			ft_strlen(target) == end)
+		i++;
+	}
+	tmp = strndup(target, i);
+	i = 0;
+	while (*target != '\0' && env_->data[i])
+	{
+		/*printf("is this the line of env --> %s\n", tmp);*/
+		end = get_char(env_->data[i], '=');
+		printf("variable is --> %s\n", env_->data[i]);
+		if (ft_strncmp((env_->data[i]), tmp, end) == 0 &&
+			ft_strlen(tmp) == end)
 		{
+			free(tmp);
 			result = ft_strdup(env_->data[i] + (end + 1));
 			return result;
 		}
@@ -290,18 +301,73 @@ char *get_env(StringArray *env_, char *target)
 	return NULL;
 }
 
+int valid_variable(char *arg)
+{
+	int i;
+	
+	i = 0;
+	while (arg[i] && arg[i] != '=')
+	{
+		printf("%c\n", arg[i]);
+		if (((ft_isdigit(arg[i]) && i == 0) || (!ft_isalpha(arg[i]) && 
+			!ft_isdigit(arg[i]) && arg[i] != '_')))
+			return 0;
+		i++;
+	}
+	return 1;
+}
+
+char *replace_variable(char *value, char *arg)
+{
+	int len;
+	int i;
+	char *result;
+	int dollar;
+
+	i = 0;
+	dollar = get_char(arg, '$');
+	i = dollar + 1;
+	printf("value %s arg ==> %s\n", value, arg);
+	while (arg[i] && (arg[i] == '_' || (ft_isdigit(arg[i]) && 0 < i) 
+		|| ft_isalpha(arg[i])))
+	{
+		i++;
+	}
+	printf("i --> %d\n", i);
+	if ((int)ft_strlen(value) < i)
+		len = ft_strlen(value);
+	else {
+		len = ft_strlen(value) - i;
+	}
+	len = dollar + (ft_strlen(value)) + len;
+	printf("len --> dollar --> %d %d\n", len, dollar);
+	result = malloc ((len + 1) * sizeof(len));
+	result[0] = '\0';
+	if (dollar > 0)
+		ft_strlcat(result, arg, dollar + 1);
+	printf("replaced vadiable 1 --> %s\n", result);
+	ft_strcat(result, value);
+	printf("replaced vadiable 2 --> %s\n", result);
+	ft_strcat(result, arg + i);
+	printf("replaced vadiable --> %s index %d arg --> %s \n", result, i, arg);
+	return result;
+}
+
 void expansion(t_command *cmds, StringArray *env_)
 {
 	t_command *current = cmds;
 	char *tmp;
+	char *result;
+	int start;
 	int i ;
 	while (current)
 	{
 		i = 0;
 		while (current->args[i])
 		{
-			if ((ft_strcmp(current->args[i], "export") == 0) && current->args[i + 1] !=
-				NULL && (ft_strchr(current->args[i + 1], '=') != 0))
+			if ((ft_strcmp(current->args[i], "export") == 0) && current->args[i + 1]
+			 && (ft_strchr(current->args[i + 1], '=') != 0) && 
+				valid_variable(current->args[i + 1]))
 			{
 				printf("ll-----------------------------------------\n");
 				i++;
@@ -316,11 +382,18 @@ void expansion(t_command *cmds, StringArray *env_)
 			else if (ft_strchr(current->args[i], '$') && 
 				(ft_strlen(current->args[i]) > 1))
 			{
-				tmp = get_env(env_, (current->args[i] + 1));
+				start = (get_char(current->args[i], '$') + 1);
+				/*end = get_end(current->args[i], start); */
+				tmp = get_env(env_, (current->args[i] + start));
 				if (tmp)
 				{
-					current->args[i]
-					printf("%s\n", tmp);
+					result = replace_variable(tmp, current->args[i]);
+					free(tmp);
+					current->args[i] = ft_realloc(current->args[i]
+								   , ft_strlen(current->args[i]), ft_strlen(result));
+					ft_strcpy(current->args[i], result);
+					/*free(tmp);*/
+					/*printf("%s\n", tmp);*/
 				}
 			}
 			i++;
