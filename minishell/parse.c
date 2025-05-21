@@ -1,4 +1,4 @@
-#include "./libft/libft.h"
+#include "./libft/libfhhhhhhhhhhhhhh.h"
 #include "minishell.h"
 #include "./get_next_line/get_next_line.h"
 #include <readline/readline.h>
@@ -45,6 +45,7 @@ int lexer(char *cmds, t_token *tokens, int tokens_index)
 	int i;
 	/*int end;*/
 	int start;
+	char quote;
 	i = 0;
 
 	while (cmds[i])
@@ -93,20 +94,26 @@ int lexer(char *cmds, t_token *tokens, int tokens_index)
 			tokens_index++;
 			i++;
 		}
-		/*else if (cmds[i] == '=')*/
-		/*{*/
-		/*	start = i;*/
-		/*	if (i <= 0)*/
-		/*		exit(EXIT_FAILURE);*/
-		/*	while (ft_strchr("><| ", cmds[start]) == 0)*/
-		/*		start--;*/
-		/*	end = start;*/
-		/*	while (cmds[end] && ft_strchr("><| ", cmds[end]) == 0)*/
-		/*		end++;*/
-		/*	env_lis	= ft_realloc(env_list, (size - 1) * sizeof(char *), */
-		/*			size * sizeof(char *));*/
-		/*	env_list[env_index] = ft_substr(cmds, start, end - start);*/
-		/*}*/
+		else if (cmds[i] == '\'' || cmds[i] == '\"')
+		{
+			tokens[tokens_index].type = TOKEN_WORD; 
+			quote = cmds[i++];
+			int tmp = i;
+			tokens[tokens_index].data = NULL;
+			while (cmds[i] && cmds[i] != quote)
+			{
+				i++;
+ 			}
+			if (cmds[i] == quote)
+			{
+				tokens[tokens_index].data = ft_substr(cmds, tmp, i - 1);
+				i++;
+			}
+			else {
+				printf("syntax Error\n");
+			}
+			tokens_index++;
+		}
 		else 
 		{
 			tokens[tokens_index].type = TOKEN_WORD; 
@@ -211,29 +218,7 @@ t_command *parser(t_token *tokens, int tokens_index, StringArray *env_)
 		}
 		else 
 		{
-			/*if (ft_strcmp(tokens[i].data, "export") == 0)*/
-			/*{*/
-			/*	if (i < tokens_index - 1  && ft_strchr(tokens[i + 1].data, '='))*/
-			/*	{*/
-			/*		strarr_push(env_, tokens[i + 1].data);*/
-			/*		for (i = 0; env_->data[i]; i++)*/
-			/*			printf("%s---\n", env_->data[i]);*/
-			/*		i++;*/
-			/*	}*/
-			/*	else {*/
-			/*		current->args[args_index++] = tokens[i].data;*/
-			/*	}*/
-			/*}*/
-			/*else {*/
-			/*	if (ft_strchr(tokens[i].data, '$') && (ft_strlen(tokens[i].data) > 1))*/
-			/*	{*/
-			/*		char *tmp = grep */
-			/*	}*/
-			/*}*/
-			/*else */
 			current->args[args_index++] = tokens[i].data;
-			/*}*/
-			/*printf("%s ->>\n", tokens[i].data);*/
 		}
 		i++;
 	}
@@ -392,8 +377,7 @@ void expansion(t_command *cmds, StringArray *env_)
 					current->args[i] = ft_realloc(current->args[i]
 								   , ft_strlen(current->args[i]), ft_strlen(result));
 					ft_strcpy(current->args[i], result);
-					/*free(tmp);*/
-					/*printf("%s\n", tmp);*/
+					free(result);
 				}
 			}
 			i++;
