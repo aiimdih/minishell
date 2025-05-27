@@ -10,6 +10,9 @@
 #include <string.h>
 #include "minishell.h"
 
+#define MAX_TOKENS 1024
+
+
 typedef struct s_command {
 	char **args;
 	char *infile;
@@ -34,12 +37,10 @@ int lexer(char *cmds, token_array *tokens)
 	char quote;
 	int tokens_index;
 	tokens_index = 0;
-	tokens->size = 0;
 	i = 0;
 
 	while (cmds[i])
 	{
-		printf("cmds[i] [%c]\n ", cmds[i]);
 		if (isspace(cmds[i]))
 		{
 			i++;
@@ -113,10 +114,8 @@ int lexer(char *cmds, token_array *tokens)
 				i++;
 			token.data = strndup(cmds + start, i - start);
 			tokens_index++;
-			printf("token ==> %s\n", token.data);
 		}
 		tokenarr_push(tokens, token.type, token.data);
-		printf("--> tokeeeen %s\n", tokens->data[0].data);
 	}
 	return tokens_index;
 }
@@ -221,7 +220,7 @@ t_command *parser(token_array *tokens, int tokens_index, StringArray *env_)
 }
 
 void print_commands(t_command *cmd) {
-    int i = 1;
+    int i = 0;
     while (cmd) {
         printf("Command %d:\n", i++);
         for (int j = 0; cmd->args[j]; j++) {
@@ -491,7 +490,6 @@ int main(int ac, char **av, char *env[])
 		if (!cmds)
 			break;
 		tockenizer(cmds, &env_, &tokens);
-		/*tokenarr_free(&tokens);*/
 	}
     /*StringArray arr;*/
     /*initStringArray(&arr, 2);*/
